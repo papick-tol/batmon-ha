@@ -1,6 +1,6 @@
 name: "Batmon2antbms"
 description: "Custom Batmon add-on with sequential_connect support"
-url: https://github.com/papick-tol/batmon-ha/
+url: https://github.com/fl4p/batmon-ha
 version: "1.0"
 startup: "before"
 boot: "auto"

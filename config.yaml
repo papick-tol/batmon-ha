@@ -40,6 +40,7 @@ options:
   watchdog: true
   expire_values_after: 20
   bt_power_cycle: false
+  sequential_connect: false
 
 schema:
   devices:
@@ -75,5 +76,7 @@ schema:
   influxdb_ssl: "bool?"
   influxdb_verify_ssl: "bool?"
   influxdb_database: "str?"
+
+  "sequential_connect": "bool?"
 
 #  telemetry: "bool?"

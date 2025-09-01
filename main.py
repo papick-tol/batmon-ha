@@ -22,6 +22,24 @@ from bmslib.store import load_user_config
 from bmslib.util import get_logger, exit_process
 from mqtt_util import mqtt_last_publish_time, mqtt_message_handler, mqtt_process_action_queue
 
+import yaml  # додаємо для читання config.yaml
+
+# Завантаження конфігурації Batmon
+CONFIG_FILE = "config.yaml"  # або "/data/options.yaml", якщо HAOS монтує конфіг так
+with open(CONFIG_FILE, "r") as f:
+    config = yaml.safe_load(f)
+
+# Список батарей
+devices = config.get("devices", [])
+
+# Інші опції
+concurrent_sampling = config.get("concurrent_sampling", True)
+sequential_connect = config.get("sequential_connect", False)
+
+# Для логування, щоб перевірити, що параметр підхопився
+print(f"Sequential connect: {sequential_connect}")
+
+
 logger = get_logger(verbose=False)
 
 user_config = load_user_config()
@@ -301,15 +319,31 @@ async def main():
     tasks = sampler_list + extra_tasks
 
     # before we start the loops connect to each bms in random order
+    # before we start the loops connect to each BMS in random order
     tasks_shuffle = list(tasks)
     random.shuffle(tasks_shuffle)
-    for t in tasks_shuffle:
-        if isinstance(t, BmsSampler) and t.bms.is_virtual:
-            continue
-        try:
-            await t()
-        except:
-            pass
+
+    if sequential_connect:
+        # по черзі, пропускаючи віртуальні BMS
+        for t in tasks_shuffle:
+            if isinstance(t, BmsSampler) and t.bms.is_virtual:
+                continue
+            try:
+                print(f"[SEQ] Connecting to {t.bms.alias}")
+                await t()  # опитування батареї
+                # у твоєму BmsSampler відключення від BMS вже відбувається після завершення t()
+            except Exception as e:
+                print(f"[SEQ] Error with {t.bms.alias}: {e}")
+    else:
+        # старий код
+        for t in tasks_shuffle:
+            if isinstance(t, BmsSampler) and t.bms.is_virtual:
+                continue
+            try:
+                await t()
+            except:
+                pass
+
 
     if pair_only:
         sys.exit(0)
